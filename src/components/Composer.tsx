@@ -32,11 +32,11 @@ export function Composer({ onSend, disabled, selectedKbId }: ComposerProps) {
         <div className="composer-input-wrapper">
           <textarea
             className="composer-input"
-            placeholder={selectedKbId ? "输入您的问题..." : "请先选择知识库"}
+            placeholder="输入您的问题..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={disabled || !selectedKbId}
+            disabled={disabled}
             rows={1}
           />
         </div>
@@ -51,7 +51,7 @@ export function Composer({ onSend, disabled, selectedKbId }: ComposerProps) {
           <button
             type="submit"
             className="send-btn"
-            disabled={disabled || !input.trim() || !selectedKbId}
+            disabled={disabled || !input.trim()}
           >
             <Send size={18} />
             发送

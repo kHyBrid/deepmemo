@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatPanel } from './components/ChatPanel';
 import { SourcesPanel } from './components/SourcesPanel';
-import { mockKnowledgeBases, getMockResponse } from './data/mock';
+import { mockKnowledgeBases } from './data/mock';
 import type { Message, SourceDocument, SearchMode, KnowledgeBase } from './types';
+import type { Session } from './services/api';
+import * as api from './services/api';
 import './App.css';
 
 function App() {
   const [selectedKbId, setSelectedKbId] = useState<string | null>(null);
+  const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [sources, setSources] = useState<SourceDocument[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,13 +20,39 @@ function App() {
 
   const currentKb = mockKnowledgeBases.find((kb) => kb.id === selectedKbId) || null;
 
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        const sessions = await api.getSessions();
+        if (sessions.length > 0) {
+          setCurrentSession(sessions[0]);
+          const msgs = await api.getSessionMessages(sessions[0].session_id);
+          setMessages(msgs.map(m => ({
+            id: m.message_id,
+            role: m.role,
+            content: m.content,
+            createdAt: m.created_at,
+          })));
+        } else {
+          const newSession = await api.createSession('默认会话');
+          setCurrentSession(newSession);
+        }
+      } catch (error) {
+        console.error('Failed to initialize session:', error);
+      }
+    };
+    initSession();
+  }, []);
+
   const handleSelectKb = (id: string) => {
     setSelectedKbId(id);
   };
 
   const handleSendMessage = async (content: string) => {
+    if (!currentSession || isLoading) return;
+
     const userMessage: Message = {
-      id: `msg-${Date.now()}-user`,
+      id: `temp-${Date.now()}-user`,
       role: 'user',
       content,
       createdAt: new Date().toISOString(),
@@ -32,38 +61,51 @@ function App() {
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    setTimeout(() => {
-      const response = getMockResponse(content);
+    try {
+      const response = await api.sendMessage(currentSession.session_id, content);
       const aiMessage: Message = {
-        id: `msg-${Date.now()}-ai`,
-        role: 'ai',
+        id: response.message_id,
+        role: response.role,
         content: response.content,
-        createdAt: new Date().toISOString(),
+        createdAt: response.created_at,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
-      setSources(response.sources);
+      setSources([]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: 'ai',
+        content: '抱歉，发生了错误，请检查后端服务是否正常运行。',
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleRefresh = () => {
-    if (messages.length > 0) {
-      const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
-      if (lastUserMessage) {
-        setIsLoading(true);
-        setTimeout(() => {
-          const response = getMockResponse(lastUserMessage.content);
-          const aiMessage: Message = {
-            id: `msg-${Date.now()}-ai`,
-            role: 'ai',
-            content: response.content,
-            createdAt: new Date().toISOString(),
-          };
-          setMessages((prev) => [...prev, aiMessage]);
-          setSources(response.sources);
-          setIsLoading(false);
-        }, 1000);
+  const handleRefresh = async () => {
+    if (!currentSession || messages.length === 0 || isLoading) return;
+
+    const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
+    if (lastUserMessage) {
+      setIsLoading(true);
+      try {
+        const response = await api.sendMessage(currentSession.session_id, lastUserMessage.content);
+        const aiMessage: Message = {
+          id: response.message_id,
+          role: response.role,
+          content: response.content,
+          createdAt: response.created_at,
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+        setSources([]);
+      } catch (error) {
+        console.error('Failed to refresh:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -72,9 +114,16 @@ function App() {
     console.log('Export conversation');
   };
 
-  const handleClear = () => {
-    setMessages([]);
-    setSources([]);
+  const handleClear = async () => {
+    if (!currentSession) return;
+    try {
+      const newSession = await api.createSession('新会话');
+      setCurrentSession(newSession);
+      setMessages([]);
+      setSources([]);
+    } catch (error) {
+      console.error('Failed to clear session:', error);
+    }
   };
 
   const handleToggleSources = () => {
