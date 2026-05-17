@@ -87,7 +87,7 @@ async def send_message(session_id: str, request: SendMessageRequest):
 
         messages = get_messages_by_session(session_id)
         chat_history = [
-            {"role": m["role"], "content": m["content"]}
+            {"role": "assistant" if m["role"] == "ai" else m["role"], "content": m["content"]}
             for m in messages
         ]
 
