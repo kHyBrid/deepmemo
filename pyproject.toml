@@ -1,0 +1,13 @@
+[project]
+name = "deepmemo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "openai>=1.50.0",
+    "pyyaml>=6.0.0",
+    "python-multipart>=0.0.9",
+]

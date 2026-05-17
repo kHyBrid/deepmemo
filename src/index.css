@@ -1,0 +1,71 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --primary-color: #1E3A5F;
+  --accent-color: #2F80ED;
+  --success-color: #16A34A;
+  --warning-color: #D97706;
+  --error-color: #DC2626;
+
+  --bg-page: #F5F7FA;
+  --bg-content: #FFFFFF;
+  --bg-sidebar: #EEF3F8;
+
+  --text-primary: #172033;
+  --text-secondary: #5B667A;
+  --text-muted: #8A94A6;
+
+  --border-color: #DDE3EA;
+  --border-hover: #AFC2D8;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
